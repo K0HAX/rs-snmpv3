@@ -1,0 +1,136 @@
+{
+  "oids": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "name": "sysDescr.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "name": "sysUpTime.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "name": "sysContact.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "name": "sysName.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "name": "sysLocation.0"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2",
+      "name": "cdpCache"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1",
+      "name": "cdpCacheTable"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1",
+      "name": "cdpCacheEntry"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.1",
+      "name": "cdpCacheIfIndex"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.2",
+      "name": "cdpCacheDeviceIndex"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.3",
+      "name": "cdpCacheAddressType"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.4",
+      "name": "cdpCacheAddress"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.5",
+      "name": "cdpCacheVersion"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.6",
+      "name": "cdpCacheDeviceId"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.7",
+      "name": "cdpCacheDevicePort"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.8",
+      "name": "cdpCachePlatform"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.9",
+      "name": "cdpCacheCapabilities"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.10",
+      "name": "cdpCacheVTPMgmtDomain"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.11",
+      "name": "cdpCacheNativeVLAN"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.12",
+      "name": "cdpCacheDuplex"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.13",
+      "name": "cdpCacheApplianceID"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.14",
+      "name": "cdpCacheVlanID"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.15",
+      "name": "cdpCachePowerConsumption"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.16",
+      "name": "cdpCacheMTU"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.17",
+      "name": "cdpCacheSysName"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.18",
+      "name": "cdpCacheSysObjectID"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.19",
+      "name": "cdpCachePrimaryMgmtAddrType"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.20",
+      "name": "cdpCachePrimaryMgmtAddr"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.21",
+      "name": "cdpCacheSecondaryMgmtAddrType"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.22",
+      "name": "cdpCacheSecondaryMgmtAddr"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.23",
+      "name": "cdpCachePhysLocation"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.1.1.34",
+      "name": "cdpCacheLastChange"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.23.1.2.2",
+      "name": "cdpCtAddressTable"
+    }
+  ]
+}
