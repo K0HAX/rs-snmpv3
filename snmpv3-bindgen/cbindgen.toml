@@ -1,0 +1,5 @@
+language = "C"
+include_version = true
+documentation = true
+documentation_style = "auto"
+documentation_length = "full"

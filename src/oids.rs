@@ -2,25 +2,28 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub trait FindOidName {
-    fn find_oid_name<'a>(self, input: &'a str) -> Option<String>;
-}
-
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
-pub struct OID<'a> {
-    pub oid: &'a str,
-    pub name: &'a str,
+    fn find_oid_name(self, input: String) -> Option<String>;
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct OidMap<'a> {
-    #[serde(borrow)]
-    pub oids: Vec<OID<'a>>,
+pub struct OID {
+    pub oid: String,
+    pub name: String,
 }
 
-impl FindOidName for OidMap<'_> {
-    fn find_oid_name(self, input: &str) -> Option<String> {
-        let oid_map: HashMap<&str, &str> = self.oids.iter().map(|x| (x.oid, x.name)).collect();
-        let input_parts: Vec<&str> = input.split(".").collect();
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct OidMap {
+    pub oids: Vec<OID>,
+}
+
+impl FindOidName for OidMap {
+    fn find_oid_name(self, input: String) -> Option<String> {
+        let oid_map: HashMap<String, String> = self
+            .oids
+            .iter()
+            .map(|x| (x.oid.clone(), x.name.clone()))
+            .collect();
+        let input_parts: Vec<&str> = input.as_str().split(".").collect();
         for i in (0..input_parts.len() + 1).rev() {
             let this_try = input_parts[0..i].join(".");
             match oid_map.get(this_try.as_str()) {

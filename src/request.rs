@@ -25,7 +25,7 @@ where
     P: PrivKey<Salt = S>,
     S: Step + Copy,
 {
-    let oid_map: HashMap<&str, &OID> = oids.iter().map(|x| (x.oid, x)).collect();
+    let oid_map: HashMap<String, &OID> = oids.iter().map(|x| (x.oid.clone(), x)).collect();
     let oid_list: Vec<String> = oids.iter().map(|x| x.oid.to_string()).collect();
     let var_binds = strings_to_var_binds(oid_list.iter());
     if var_binds.is_empty() {
@@ -40,8 +40,8 @@ where
         for var_bind in var_binds {
             let vb_string = var_bind.name().to_string();
             let this_oid = vb_string.as_str();
-            let oid_obj: OID = match oid_map.get(&this_oid) {
-                Some(&&x) => x,
+            let oid_obj: OID = match oid_map.get(this_oid) {
+                Some(&&ref x) => x.clone(),
                 _ => return Err(format_err!("OID not in oid_map: {:#?}", oid_map)),
             };
             let this_result: params::SnmpResult = var_bind_to_snmp_result(
@@ -98,16 +98,15 @@ where
 
                 let oid_string: &String = &var.name().to_string();
                 let oid_obj: OID = OID {
-                    name: &var.name().to_string(),
-                    oid: (*oid_string).as_str(),
+                    name: var.name().to_string(),
+                    oid: (*oid_string.clone()).to_string(),
                 };
                 let this_result: params::SnmpResult = var_bind_to_snmp_result(
                     client.socket.peer_addr()?.to_string(),
                     oid_map
                         .clone()
-                        .find_oid_name(oid_obj.oid)
-                        .unwrap_or_else(|| oid_obj.oid.to_string())
-                        .as_str(),
+                        .find_oid_name(oid_obj.oid.clone())
+                        .unwrap_or_else(|| oid_obj.oid.to_string()),
                     var.clone(),
                 )?;
                 //println!("request.rs: {:?}", this_result);
@@ -152,7 +151,7 @@ fn next_sibling(oid: &ObjectIdent) -> ObjectIdent {
 
 fn var_bind_to_snmp_result(
     req_host: String,
-    req_oid: &str,
+    req_oid: String,
     req_var_bind: VarBind,
 ) -> Result<params::SnmpResult> {
     let bound_value: params::SnmpValue = params::SnmpValue::from(req_var_bind.value().to_owned());

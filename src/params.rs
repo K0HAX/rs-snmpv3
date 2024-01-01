@@ -10,18 +10,17 @@ pub struct ObjectIdentifier {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Params<'a> {
+pub struct Params {
     pub user: String,
     pub host: String,
     pub auth: Option<String>,
     pub auth_protocol: Option<String>,
     pub privacy: Option<String>,
     pub privacy_protocol: Option<String>,
-    #[serde(borrow)]
-    pub cmd: Command<'a>,
+    pub cmd: Command,
 }
 
-impl Params<'_> {
+impl Params {
     pub const MD5_DIGEST: &'static str = "MD5";
     pub const SHA1_DIGEST: &'static str = "SHA1";
     pub const DES_ENCRYPTION: &'static str = "DES";
@@ -29,19 +28,10 @@ impl Params<'_> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Command<'a> {
-    Get {
-        #[serde(borrow)]
-        oids: Vec<OID<'a>>,
-    },
-    GetNext {
-        #[serde(borrow)]
-        oids: Vec<OID<'a>>,
-    },
-    Walk {
-        #[serde(borrow)]
-        oid: OID<'a>,
-    },
+pub enum Command {
+    Get { oids: Vec<OID> },
+    GetNext { oids: Vec<OID> },
+    Walk { oid: OID },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -137,7 +127,7 @@ impl fmt::Display for SnmpValue {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SnmpResult {
     pub host: String,
     pub oid: String,

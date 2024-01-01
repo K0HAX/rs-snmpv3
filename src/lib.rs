@@ -5,7 +5,6 @@ pub mod oids;
 pub mod params;
 pub mod request;
 pub mod session;
-pub mod utils;
 
 use client::Client;
 pub use params::{Command, Params, SnmpResult};

@@ -2,32 +2,36 @@ extern crate k0hax_snmpv3;
 use anyhow::{format_err, Result};
 use clap::{Parser, ValueEnum};
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::BufReader;
 use std::process::ExitCode;
 
-use k0hax_snmpv3::{oids, params, utils};
+use k0hax_snmpv3::{oids, params};
 
 #[allow(dead_code)]
-fn write_json(path: &str, data: &Vec<params::Params>) -> Result<()> {
+fn write_json_params(path: &str, data: &Vec<params::Params>) -> Result<()> {
     let mut output = File::create(path)?;
     serde_json::to_writer(&mut output, &data)?;
     Ok(())
 }
 
-fn read_json<'a>(path: &'a str, mut buffer: &'a mut String) -> Result<Vec<params::Params<'a>>> {
-    let mut f = File::open(path)?;
-    f.read_to_string(&mut buffer)?;
-    Ok(utils::params_json_read::<utils::DeserializeBorrowedParams>(
-        buffer,
-    )?)
+fn read_json_params(path: &str) -> Result<Vec<params::Params>> {
+    // Open the file in read-only mode with buffer
+    let f = File::open(path)?;
+    let reader = BufReader::new(f);
+
+    // Read the JSON contents of the file as an instance of `Vec<params::Params>`
+    let p = serde_json::from_reader(reader)?;
+    Ok(p)
 }
 
-fn read_oid_json<'a>(path: &'a str, mut buffer: &'a mut String) -> Result<oids::OidMap<'a>> {
-    let mut f = File::open(path)?;
-    f.read_to_string(&mut buffer)?;
-    Ok(utils::oidmap_json_read::<utils::DeserializeBorrowedOidMap>(
-        buffer,
-    )?)
+fn read_oid_json(path: &str) -> Result<oids::OidMap> {
+    // Open the file in read-only mode with buffer
+    let f = File::open(path)?;
+    let reader = BufReader::new(f);
+
+    // Read the JSON contents of the file as an instance of `oids::OidMap`
+    let o = serde_json::from_reader(reader)?;
+    Ok(o)
 }
 
 #[allow(dead_code)]
@@ -132,7 +136,6 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
 
     let config = &cli.config;
-    let params_buf: &mut String = &mut String::new();
     let oid_arg: String = if let Some(c_oid) = cli.oid {
         c_oid
     } else {
@@ -144,7 +147,7 @@ fn main() -> ExitCode {
     let priv_type: Option<PrivTypeArgs> = cli.privacy_protocol;
 
     let my_params: Vec<params::Params> = if let Some(c) = config {
-        read_json(c, params_buf).unwrap()
+        read_json_params(c).unwrap()
     } else {
         // Auth and Auth Key
         let real_auth = match auth_type {
@@ -172,8 +175,8 @@ fn main() -> ExitCode {
 
         // Command `Walk`
         let oid_raw: oids::OID = oids::OID {
-            oid: &oid_arg,
-            name: &oid_arg,
+            oid: oid_arg.clone(),
+            name: oid_arg,
         };
 
         let cmd_param: params::Command = params::Command::Walk { oid: oid_raw };
@@ -193,8 +196,7 @@ fn main() -> ExitCode {
         }])
     };
 
-    let oids_buf: &mut String = &mut String::new();
-    let oids: oids::OidMap = read_oid_json("oids.json", oids_buf).unwrap();
+    let oids: oids::OidMap = read_oid_json("oids.json").unwrap();
 
     let data = get_all(oids, my_params).unwrap();
 
