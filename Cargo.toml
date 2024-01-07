@@ -1,3 +1,4 @@
+#workspace = { members = ["snmpv3-python"] }
 [package]
 name = "k0hax-snmpv3"
 authors = ["Michael Englehorn"]

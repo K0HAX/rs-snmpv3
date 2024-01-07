@@ -17,7 +17,24 @@ enum PrivTypeArgs {
 };
 typedef uint8_t PrivTypeArgs;
 
-typedef struct Vec_u8 Vec_u8;
+/**
+ * This will allow C programs to read the correct SnmpValue type
+ */
+typedef enum SnmpType {
+  Int,
+  String,
+  ObjectId,
+  IpAddress,
+  Counter,
+  UnsignedInt,
+  TimeTicks,
+  Opaque,
+  BigCounter,
+  Unspecified,
+  NoSuchObject,
+  NoSuchInstance,
+  EndOfMibView,
+} SnmpType;
 
 typedef struct OID {
   const char *oid;
@@ -82,61 +99,30 @@ typedef struct Params {
 } Params;
 
 /**
- * This enum is so that C can identify the type of each `SnmpValue`.
- */
-typedef enum SnmpValue_Tag {
-  Int,
-  String,
-  IpAddress,
-  Counter,
-  UnsignedInt,
-  TimeTicks,
-  Opaque,
-  BigCounter,
-  Unspecified,
-  NoSuchObject,
-  NoSuchInstance,
-  EndOfMibView,
-} SnmpValue_Tag;
-
-typedef struct SnmpValue {
-  SnmpValue_Tag tag;
-  union {
-    struct {
-      int32_t int_;
-    };
-    struct {
-      char *string;
-    };
-    struct {
-      uint8_t ip_address[4];
-    };
-    struct {
-      uint32_t counter;
-    };
-    struct {
-      uint32_t unsigned_int;
-    };
-    struct {
-      uint32_t time_ticks;
-    };
-    struct {
-      struct Vec_u8 *opaque;
-    };
-    struct {
-      uint64_t big_counter;
-    };
-  };
-} SnmpValue;
-
-/**
  * A struct to return to C with the results of the SNMPv3 command.
  */
 typedef struct SnmpResult {
   char *host;
   char *oid;
-  struct SnmpValue *result;
+  enum SnmpType result_type;
+  uintptr_t length;
+  void *result;
 } SnmpResult;
+
+/**
+ * A struct to return to C with an array of results of the SNMPv3 command.
+ */
+typedef struct SnmpResults {
+  uintptr_t length;
+  uintptr_t capacity;
+  struct SnmpResult **results;
+} SnmpResults;
+
+typedef struct ObjectIdentifier {
+  uintptr_t length;
+  uintptr_t capacity;
+  uint64_t *components;
+} ObjectIdentifier;
 
 void *new_oid_map(void);
 
@@ -156,4 +142,8 @@ void print_params(struct Params *ptr);
 
 void free_snmp_result(struct SnmpResult *ptr);
 
-struct SnmpResult *run(void *oid_map_ptr, struct Params *param_ptr);
+void free_snmp_results(struct SnmpResults *ptr);
+
+void free_object_identifier(struct ObjectIdentifier *ptr);
+
+struct SnmpResults *run(void *oid_map_ptr, struct Params *param_ptr);

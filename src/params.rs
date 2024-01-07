@@ -6,7 +6,7 @@ use crate::oids::OID;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ObjectIdentifier {
-    components: Vec<u64>,
+    pub components: Vec<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

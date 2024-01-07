@@ -1,7 +1,10 @@
+#![feature(vec_into_raw_parts)]
+
 use k0hax_snmpv3;
 //use std::ffi;
 use std::ffi::{c_char, c_void, CStr, CString};
 use std::fmt;
+use anyhow::Result;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(u8)]
@@ -161,7 +164,45 @@ impl fmt::Debug for Params {
 pub struct SnmpResult {
     pub host: *mut c_char,
     pub oid: *mut c_char,
-    pub result: *mut SnmpValue,
+    pub result_type: SnmpType,
+    pub length: usize,
+    pub result: *mut c_void,
+}
+
+/// A struct to return to C with an array of results of the SNMPv3 command.
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+pub struct SnmpResults {
+    pub length: usize,
+    pub capacity: usize,
+    pub results: *mut *mut SnmpResult,
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+pub struct ObjectIdentifier {
+    pub length: usize,
+    pub capacity: usize,
+    pub components: *mut u64,
+}
+
+/// This will allow C programs to read the correct SnmpValue type
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
+pub enum SnmpType {
+    Int,
+    String,
+    ObjectId,
+    IpAddress,
+    Counter,
+    UnsignedInt,
+    TimeTicks,
+    Opaque,
+    BigCounter,
+    Unspecified,
+    NoSuchObject,
+    NoSuchInstance,
+    EndOfMibView,
 }
 
 /// This enum is so that C can identify the type of each `SnmpValue`.
@@ -169,7 +210,7 @@ pub struct SnmpResult {
 pub enum SnmpValue {
     Int(i32),
     String(*mut c_char),
-    //ObjectId(ObjectIdentifier),
+    ObjectId(ObjectIdentifier),
     IpAddress([u8; 4]),
     Counter(u32),
     UnsignedInt(u32),
@@ -314,28 +355,78 @@ fn to_c_snmp_result(item: k0hax_snmpv3::params::SnmpResult) -> SnmpResult {
         Some(x) => x,
         None => panic!("No SnmpValue in SnmpResult!"),
     };
+    let mut length: usize = 0;
+    let return_type;
     let result = match result_intermediate {
-        k0hax_snmpv3::params::SnmpValue::Int(x) => SnmpValue::Int(x),
-        k0hax_snmpv3::params::SnmpValue::String(x) => {
-            SnmpValue::String(CString::new(x).unwrap().into_raw())
+        k0hax_snmpv3::params::SnmpValue::Int(x) => {
+            return_type = SnmpType::Int;
+            Box::into_raw(Box::new(x)) as *mut c_void
         }
-        k0hax_snmpv3::params::SnmpValue::ObjectId(_) => todo!(),
-        k0hax_snmpv3::params::SnmpValue::IpAddress(x) => SnmpValue::IpAddress(x),
-        k0hax_snmpv3::params::SnmpValue::Counter(x) => SnmpValue::Counter(x),
-        k0hax_snmpv3::params::SnmpValue::UnsignedInt(x) => SnmpValue::UnsignedInt(x),
-        k0hax_snmpv3::params::SnmpValue::TimeTicks(x) => SnmpValue::TimeTicks(x),
-        k0hax_snmpv3::params::SnmpValue::Opaque(x) => SnmpValue::Opaque(Box::new(x)),
-        k0hax_snmpv3::params::SnmpValue::BigCounter(x) => SnmpValue::BigCounter(x),
-        k0hax_snmpv3::params::SnmpValue::Unspecified => SnmpValue::Unspecified,
-        k0hax_snmpv3::params::SnmpValue::NoSuchObject => SnmpValue::NoSuchObject,
-        k0hax_snmpv3::params::SnmpValue::NoSuchInstance => SnmpValue::NoSuchInstance,
-        k0hax_snmpv3::params::SnmpValue::EndOfMibView => SnmpValue::EndOfMibView,
+        k0hax_snmpv3::params::SnmpValue::String(x) => {
+            length = x.len();
+            return_type = SnmpType::String;
+            CString::new(x).unwrap().into_raw() as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::ObjectId(mut x) => {
+            let length = x.components.len();
+            let capacity = x.components.capacity();
+            return_type = SnmpType::ObjectId;
+            let components = x.components.as_mut_ptr() as *mut u64;
+            Box::into_raw(Box::new({
+                ObjectIdentifier {
+                    length: length,
+                    capacity: capacity,
+                    components: components,
+                }
+            })) as *mut c_void
+        },
+        k0hax_snmpv3::params::SnmpValue::IpAddress(x) => {
+            return_type = SnmpType::IpAddress;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::Counter(x) => {
+            return_type = SnmpType::Counter;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::UnsignedInt(x) => {
+            return_type = SnmpType::UnsignedInt;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::TimeTicks(x) => {
+            return_type = SnmpType::TimeTicks;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::Opaque(x) => {
+            return_type = SnmpType::Opaque;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::BigCounter(x) => {
+            return_type = SnmpType::BigCounter;
+            Box::into_raw(Box::new(x)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::Unspecified => {
+            return_type = SnmpType::Unspecified;
+            Box::into_raw(Box::new(SnmpValue::Unspecified)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::NoSuchObject => {
+            return_type = SnmpType::NoSuchObject;
+            Box::into_raw(Box::new(SnmpValue::NoSuchObject)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::NoSuchInstance => {
+            return_type = SnmpType::NoSuchInstance;
+            Box::into_raw(Box::new(SnmpValue::NoSuchInstance)) as *mut c_void
+        }
+        k0hax_snmpv3::params::SnmpValue::EndOfMibView => {
+            return_type = SnmpType::EndOfMibView;
+            Box::into_raw(Box::new(SnmpValue::EndOfMibView)) as *mut c_void
+        }
     };
-    let boxed_result = Box::new(result);
     SnmpResult {
         host: host.into_raw(),
         oid: oid.into_raw(),
-        result: Box::into_raw(boxed_result) as *mut SnmpValue,
+        length: length,
+        result_type: return_type,
+        result: result,
     }
 }
 
@@ -351,7 +442,8 @@ pub unsafe extern "C" fn free_snmp_result(ptr: *mut SnmpResult) {
     let result = Box::from_raw(ptr);
     free_cstring(result.host);
     free_cstring(result.oid);
-    let inner_result = Box::from_raw(result.result);
+    let inner_result_ptr = result.result as *mut SnmpValue;
+    let inner_result = Box::from_raw(inner_result_ptr);
     match *inner_result {
         SnmpValue::String(x) => free_cstring(x),
         _ => (),
@@ -359,7 +451,32 @@ pub unsafe extern "C" fn free_snmp_result(ptr: *mut SnmpResult) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn run(oid_map_ptr: *mut c_void, param_ptr: *mut Params) -> *mut SnmpResult {
+pub unsafe extern "C" fn free_snmp_results(ptr: *mut SnmpResults) {
+    assert!(!ptr.is_null());
+    let results_ptr = Box::from_raw(ptr);
+    let results_results = results_ptr.results;
+    let p_snmpresult = unsafe { Vec::<*mut SnmpResult>::from_raw_parts(results_results, results_ptr.length, results_ptr.capacity) };
+    let _ = free_snmpresult_vec(p_snmpresult).unwrap();
+}
+
+fn free_snmpresult_vec(p_snmpresult: Vec<*mut SnmpResult>) -> Result<()> {
+    for ptr_snmp_result in p_snmpresult {
+        assert!(!ptr_snmp_result.is_null());
+        let _: Box<SnmpResult> = unsafe { Box::from_raw(ptr_snmp_result) };
+    }
+    Ok(())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn free_object_identifier(ptr: *mut ObjectIdentifier) {
+    assert!(!ptr.is_null());
+    let oid_container = Box::from_raw(ptr);
+    assert!(!oid_container.components.is_null());
+    let _ = unsafe { Vec::<u64>::from_raw_parts(oid_container.components, oid_container.length, oid_container.capacity) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn run(oid_map_ptr: *mut c_void, param_ptr: *mut Params) -> *mut SnmpResults {
     assert!(!oid_map_ptr.is_null());
     assert!(!param_ptr.is_null());
     let oid_map_real_ptr = oid_map_ptr as *mut OidMap;
@@ -514,7 +631,19 @@ pub unsafe extern "C" fn run(oid_map_ptr: *mut c_void, param_ptr: *mut Params) -
     };
     let retval = k0hax_snmpv3::run(k0hax_oid_map.clone(), real_params);
     //let retval: k0hax_snmpv3::Params::SnmpResult = k0hax_snmpv3::run
-    Box::into_raw(Box::new(to_c_snmp_result(retval.unwrap()[0].clone()))) as *mut SnmpResult
+    let mut vec_results: Vec<*mut SnmpResult> = Vec::new();
+    for t_result in retval.unwrap() {
+        let t_raw_result: *mut SnmpResult = Box::into_raw(Box::new(to_c_snmp_result(t_result)));
+        vec_results.push(t_raw_result);
+    }
+    vec_results.shrink_to_fit();
+    let (vec_results_ptr, vec_results_len, vec_results_cap) = vec_results.into_raw_parts();
+    let retval_results: SnmpResults = SnmpResults {
+        length: vec_results_len,
+        capacity: vec_results_cap,
+        results: vec_results_ptr,
+    };
+    Box::into_raw(Box::new(retval_results)) as *mut SnmpResults
 }
 
 /*
