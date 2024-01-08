@@ -3,6 +3,12 @@
 #include <string.h>
 #include "libsnmpv3_bindings.h"
 
+/*
+ * A convenience function to correctly format a single SnmpResult
+ *
+ * This also demonstrates how to correctly parse an SnmpResult and determine
+ * what type of result it is.
+*/
 int print_type(struct SnmpResult *ptr) {
     enum SnmpType r_type = ptr->result_type;
     switch (r_type)
@@ -42,8 +48,8 @@ int print_type(struct SnmpResult *ptr) {
             break;
         case TimeTicks:
             printf("Type: TimeTicks\n");
-            unsigned int *time_ticks_result = ptr->result;
-            printf("[TimeTicks] %u\n", *time_ticks_result);
+            unsigned long time_ticks_result =(unsigned long) ptr->result;
+            printf("[TimeTicks] %lu\n", time_ticks_result);
             return 0;
             break;
         case Opaque:
@@ -88,6 +94,9 @@ int print_type(struct SnmpResult *ptr) {
     return 1;
 }
 
+/*
+ * A convenience function to print every `SnmpResult` inside SnmpResults.
+*/
 int print_all_results(struct SnmpResults results) {
     uintptr_t length = results.length;
     printf("Results Length: %tu\n", length);
@@ -127,7 +136,7 @@ int main(int argc, char** argv) {
     // OID 1
     struct OID* oid_sysDescr = (struct OID*)malloc(sizeof(struct OID));
     oid_sysDescr->oid = "1.3.6.1.2.1.1";
-    oid_sysDescr->name = "sysDescr.0";
+    oid_sysDescr->name = "system";
     insert_oid_map(oid_sysDescr, oid_map);
 
     // Command
@@ -151,21 +160,11 @@ int main(int argc, char** argv) {
     my_params->auth_params = auth_params;
     my_params->priv_params = priv_params;
     my_params->cmd = walk_cmd;
-    //print_params(my_params);
 
     struct SnmpResults* my_result = run(oid_map, my_params);
 
     print_all_results(*my_result);
 
-    /*
-    printf("Host: %s\n\n", my_result->host);
-    printf("OID: %s\n\n", my_result->oid);
-    //printf("sysDescr.0: %s\n\n", my_result->result->string);
-    if (print_type(my_result) != 0) {
-        printf("Failed to print!\n");
-    }
-    free_snmp_result(my_result);
-    */
     printf("Freeing my_result!\n");
     free_snmp_results(my_result);
     printf("Freeing oid_map!\n");
